@@ -75,6 +75,54 @@
         font-size: 0.92rem;
       }
 
+      .tester {
+        margin-top: 16px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 14px;
+        background: #f8fafc;
+      }
+
+      .tester h2 {
+        margin: 0 0 10px;
+        font-size: 1rem;
+      }
+
+      .row {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 10px;
+      }
+
+      .row input {
+        width: 100%;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        padding: 10px;
+        font: inherit;
+      }
+
+      .row button {
+        border: 1px solid #0284c7;
+        background: #0ea5e9;
+        color: white;
+        border-radius: 8px;
+        padding: 10px 14px;
+        font: inherit;
+        cursor: pointer;
+      }
+
+      .result {
+        margin-top: 10px;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        padding: 10px;
+        background: white;
+        min-height: 38px;
+        font-size: 0.9rem;
+        white-space: pre-wrap;
+      }
+
       .code {
         background: #f1f5f9;
         color: #0f172a;
@@ -114,8 +162,66 @@
             Change iframe source if needed. Current source:
             <span class="code">./iframe.html</span>
           </p>
+
+          <section class="tester" aria-labelledby="pna-tester-title">
+            <h2 id="pna-tester-title">CORS / Private Network Probe</h2>
+            <p class="tip">
+              This sends a cross-origin request with a custom header to force preflight. Check DevTools Network for the OPTIONS request and whether it includes
+              <span class="code">Access-Control-Request-Private-Network: true</span>.
+            </p>
+            <div class="row">
+              <input id="probeUrl" type="url" value="https://matomo/matomo.php" aria-label="Probe URL" />
+              <button id="runProbe" type="button">Run Probe</button>
+            </div>
+            <div id="probeResult" class="result">Idle</div>
+            <p class="tip">
+              If PNA is not triggered locally, test from your deployed Vercel origin to a local/private target; browsers only add the private-network check when address spaces differ.
+            </p>
+          </section>
         </div>
       </section>
     </main>
+
+    <script>
+      const probeButton = document.getElementById('runProbe');
+      const probeUrlInput = document.getElementById('probeUrl');
+      const probeResult = document.getElementById('probeResult');
+
+      async function runProbe() {
+        const url = probeUrlInput.value.trim();
+        if (!url) {
+          probeResult.textContent = 'Please provide a URL.';
+          return;
+        }
+
+        probeResult.textContent = 'Running request...';
+        const startedAt = performance.now();
+
+        try {
+          const response = await fetch(url, {
+            method: 'GET',
+            mode: 'cors',
+            credentials: 'include',
+            headers: {
+              'X-Cors-Probe': 'pna-check',
+            },
+          });
+
+          const durationMs = Math.round(performance.now() - startedAt);
+          probeResult.textContent =
+            'Fetch completed. HTTP status: ' + response.status + '\n' +
+            'Elapsed: ' + durationMs + 'ms\n' +
+            'Now inspect the OPTIONS preflight in DevTools Network.';
+        } catch (error) {
+          const durationMs = Math.round(performance.now() - startedAt);
+          probeResult.textContent =
+            'Fetch blocked/failed after ' + durationMs + 'ms.\n' +
+            String(error) + '\n' +
+            'Inspect DevTools Network + Console to see whether preflight was sent and which CORS/PNA header was rejected.';
+        }
+      }
+
+      probeButton.addEventListener('click', runProbe);
+    </script>
   </body>
 </html>
