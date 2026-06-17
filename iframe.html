@@ -179,6 +179,7 @@
       trackPageViewBtn.addEventListener('click', trackPageViewWithFetch);
       optionsProbeBtn.addEventListener('click', runOptionsProbe);
       payloadPreview.textContent = buildPageViewPayload().toString();
+      window.addEventListener('load', trackPageViewWithFetch);
     </script>
   </body>
 </html>
