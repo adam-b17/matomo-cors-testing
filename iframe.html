@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Iframe Target</title>
+    <style>
+      :root {
+        --bg: #fff7ed;
+        --text: #1c1917;
+        --muted: #57534e;
+        --border: #fed7aa;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Avenir Next", "Segoe UI", Helvetica, Arial, sans-serif;
+        background: linear-gradient(180deg, #ffedd5 0%, var(--bg) 60%);
+        color: var(--text);
+      }
+
+      .content {
+        max-width: 820px;
+        margin: 0 auto;
+        padding: 28px 22px 40px;
+      }
+
+      h2 {
+        margin: 0 0 12px;
+      }
+
+      p {
+        margin: 0 0 12px;
+        color: var(--muted);
+      }
+
+      .panel {
+        margin-top: 18px;
+        border: 1px dashed var(--border);
+        border-radius: 12px;
+        background: #ffffffc7;
+        padding: 16px;
+      }
+
+      .code {
+        margin: 0;
+        white-space: pre-wrap;
+        font-family: ui-monospace, Menlo, Consolas, Monaco, monospace;
+        font-size: 0.85rem;
+      }
+    </style>
+
+    <!-- Matomo -->
+    <script>
+      var _paq = window._paq = window._paq || [];
+      /* tracker methods like "setCustomDimension" should be called before "trackPageView" */
+      _paq.push(['trackPageView']);
+      _paq.push(['enableLinkTracking']);
+      (function() {
+        var u="https://matomo/";
+        _paq.push(['setTrackerUrl', u+'matomo.php']);
+        _paq.push(['setSiteId', '10']);
+        var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
+        g.async=true; g.src=u+'matomo.js'; s.parentNode.insertBefore(g,s);
+      })();
+    </script>
+    <!-- End Matomo Code -->
+  </head>
+  <body>
+    <div class="content">
+      <h2>Iframe Target Page</h2>
+      <p>
+        This page runs inside the iframe and is the intended place to add the Matomo tracking snippet.
+      </p>
+      <p>
+        Use browser devtools network tab to verify requests to <strong>matomo.php</strong> and script loading for <strong>matomo.js</strong>.
+      </p>
+
+      <section class="panel">
+        <pre class="code">Ready for Matomo script integration.</pre>
+      </section>
+    </div>
+  </body>
+</html>
