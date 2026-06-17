@@ -166,7 +166,7 @@
           <section class="tester" aria-labelledby="pna-tester-title">
             <h2 id="pna-tester-title">CORS / Private Network Probe</h2>
             <p class="tip">
-              This sends a cross-origin request with a custom header to force preflight. Check DevTools Network for the OPTIONS request and whether it includes
+              This sends a cross-origin POST with JSON + custom header to force preflight. Check DevTools Network for the OPTIONS request and whether it includes
               <span class="code">Access-Control-Request-Private-Network: true</span>.
             </p>
             <div class="row">
@@ -174,6 +174,9 @@
               <button id="runProbe" type="button">Run Probe</button>
             </div>
             <div id="probeResult" class="result">Idle</div>
+            <p class="tip">
+              Note: <span class="code">&lt;script src&gt;</span> loads (like matomo.js) do not perform CORS preflight, so test preflight behavior with this fetch probe.
+            </p>
             <p class="tip">
               If PNA is not triggered locally, test from your deployed Vercel origin to a local/private target; browsers only add the private-network check when address spaces differ.
             </p>
@@ -199,12 +202,17 @@
 
         try {
           const response = await fetch(url, {
-            method: 'GET',
+            method: 'POST',
             mode: 'cors',
             credentials: 'include',
             headers: {
               'X-Cors-Probe': 'pna-check',
+              'Content-Type': 'application/json',
             },
+            body: JSON.stringify({
+              probe: 'pna',
+              timestamp: Date.now(),
+            }),
           });
 
           const durationMs = Math.round(performance.now() - startedAt);

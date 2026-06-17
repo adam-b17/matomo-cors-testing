@@ -48,37 +48,137 @@
         font-family: ui-monospace, Menlo, Consolas, Monaco, monospace;
         font-size: 0.85rem;
       }
-    </style>
 
-    <!-- Matomo -->
-    <script>
-      var _paq = window._paq = window._paq || [];
-      /* tracker methods like "setCustomDimension" should be called before "trackPageView" */
-      _paq.push(['trackPageView']);
-      _paq.push(['enableLinkTracking']);
-      (function() {
-        var u="https://matomo/";
-        _paq.push(['setTrackerUrl', u+'matomo.php']);
-        _paq.push(['setSiteId', '10']);
-        var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
-        g.async=true; g.src=u+'matomo.js'; s.parentNode.insertBefore(g,s);
-      })();
-    </script>
-    <!-- End Matomo Code -->
+      .actions {
+        margin-top: 12px;
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      button {
+        border: 1px solid #ea580c;
+        background: #f97316;
+        color: #fff;
+        border-radius: 8px;
+        padding: 8px 12px;
+        cursor: pointer;
+        font: inherit;
+      }
+
+      .status {
+        margin-top: 10px;
+        border: 1px solid #fdba74;
+        border-radius: 8px;
+        padding: 10px;
+        background: #fff;
+        font-size: 0.9rem;
+        white-space: pre-wrap;
+      }
+    </style>
   </head>
   <body>
     <div class="content">
       <h2>Iframe Target Page</h2>
       <p>
-        This page runs inside the iframe and is the intended place to add the Matomo tracking snippet.
+        This page runs inside the iframe and tracks to Matomo using fetch instead of loading matomo.js.
       </p>
       <p>
-        Use browser devtools network tab to verify requests to <strong>matomo.php</strong> and script loading for <strong>matomo.js</strong>.
+        The request includes a custom header to force CORS preflight, making it easier to validate private-network preflight behavior.
       </p>
 
       <section class="panel">
-        <pre class="code">Ready for Matomo script integration.</pre>
+        <pre class="code" id="payloadPreview">Preparing payload...</pre>
+        <div class="actions">
+          <button type="button" id="trackPageViewBtn">Track Page View (fetch)</button>
+          <button type="button" id="optionsProbeBtn">Run OPTIONS Probe</button>
+        </div>
+        <div class="status" id="trackStatus">Idle</div>
       </section>
     </div>
+
+    <script>
+      const MATOMO_BASE = 'https://matomo/';
+      const MATOMO_SITE_ID = '10';
+      const payloadPreview = document.getElementById('payloadPreview');
+      const trackStatus = document.getElementById('trackStatus');
+      const trackPageViewBtn = document.getElementById('trackPageViewBtn');
+      const optionsProbeBtn = document.getElementById('optionsProbeBtn');
+
+      function buildPageViewPayload() {
+        const params = new URLSearchParams();
+        params.set('idsite', MATOMO_SITE_ID);
+        params.set('rec', '1');
+        params.set('apiv', '1');
+        params.set('action_name', document.title || 'Iframe Target');
+        params.set('url', window.location.href);
+        params.set('rand', String(Date.now()));
+        return params;
+      }
+
+      async function trackPageViewWithFetch() {
+        const params = buildPageViewPayload();
+        payloadPreview.textContent = params.toString();
+        trackStatus.textContent = 'Sending fetch to ' + MATOMO_BASE + 'matomo.php ...';
+        const startedAt = performance.now();
+
+        try {
+          const response = await fetch(MATOMO_BASE + 'matomo.php', {
+            method: 'POST',
+            mode: 'cors',
+            credentials: 'include',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+              'X-Cors-Probe': 'matomo-fetch-tracker',
+            },
+            body: params.toString(),
+          });
+
+          const durationMs = Math.round(performance.now() - startedAt);
+          trackStatus.textContent =
+            'Fetch completed. HTTP status: ' + response.status + '\n' +
+            'Elapsed: ' + durationMs + 'ms\n' +
+            'Check DevTools Network for the OPTIONS preflight and private-network headers.';
+        } catch (error) {
+          const durationMs = Math.round(performance.now() - startedAt);
+          trackStatus.textContent =
+            'Fetch failed after ' + durationMs + 'ms.\n' +
+            String(error) + '\n' +
+            'Check DevTools Network and Console for CORS/PNA rejection details.';
+        }
+      }
+
+      async function runOptionsProbe() {
+        trackStatus.textContent = 'Sending OPTIONS probe to ' + MATOMO_BASE + 'matomo.php ...';
+        const startedAt = performance.now();
+
+        try {
+          const response = await fetch(MATOMO_BASE + 'matomo.php', {
+            method: 'OPTIONS',
+            mode: 'cors',
+            credentials: 'include',
+            headers: {
+              'X-Cors-Probe': 'matomo-options-probe',
+            },
+          });
+
+          const durationMs = Math.round(performance.now() - startedAt);
+          trackStatus.textContent =
+            'OPTIONS completed. HTTP status: ' + response.status + '\n' +
+            'Elapsed: ' + durationMs + 'ms\n' +
+            'Use DevTools to confirm returned CORS/PNA headers on this OPTIONS response.';
+        } catch (error) {
+          const durationMs = Math.round(performance.now() - startedAt);
+          trackStatus.textContent =
+            'OPTIONS failed after ' + durationMs + 'ms.\n' +
+            String(error) + '\n' +
+            'Check DevTools Network and Console for CORS/PNA failure details.';
+        }
+      }
+
+      trackPageViewBtn.addEventListener('click', trackPageViewWithFetch);
+      optionsProbeBtn.addEventListener('click', runOptionsProbe);
+      payloadPreview.textContent = buildPageViewPayload().toString();
+    </script>
   </body>
 </html>
